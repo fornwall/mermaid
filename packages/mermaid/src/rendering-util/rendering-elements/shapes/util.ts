@@ -47,6 +47,15 @@ export const withMinWidth = (bbox: DOMRect, minWidth: number): DOMRect => {
   } as DOMRect;
 };
 
+/**
+ * The x offset that centres a label on x=0, as the shapes compute it when they place
+ * labels themselves. For an HTML label `left === x`, leaving `-width / 2` from the
+ * foreignObject origin. SVG text's `getBBox()` has no `left`, so its `x` is cancelled
+ * too: the text is centred wherever `text-anchor` put it, and stays centred when
+ * `withMinWidth` has widened the box symmetrically.
+ */
+const centredLabelX = (bbox: DOMRect) => -bbox.width / 2 - (bbox.x - (bbox.left ?? 0));
+
 export const labelHelper = async <T extends SVGGraphicsElement>(
   parent: D3Selection<T>,
   node: Node,
@@ -141,14 +150,7 @@ export const labelHelper = async <T extends SVGGraphicsElement>(
   }
 
   // Center the label
-  if (useHtmlLabels) {
-    labelEl.attr('transform', 'translate(' + -bbox.width / 2 + ', ' + -bbox.height / 2 + ')');
-  } else {
-    labelEl.attr('transform', 'translate(' + 0 + ', ' + -bbox.height / 2 + ')');
-  }
-  if (node.centerLabel) {
-    labelEl.attr('transform', 'translate(' + -bbox.width / 2 + ', ' + -bbox.height / 2 + ')');
-  }
+  labelEl.attr('transform', `translate(${centredLabelX(bbox)}, ${-bbox.height / 2})`);
   labelEl.insert('rect', ':first-child');
   return { shapeSvg, bbox, halfPadding, label: labelEl };
 };
@@ -162,7 +164,6 @@ export const insertLabel = async <T extends SVGGraphicsElement>(
     useHtmlLabels?: boolean | undefined;
     padding: number;
     width?: number | undefined;
-    centerLabel?: boolean | undefined;
     addSvgBackground?: boolean | undefined;
   }
 ) => {
@@ -206,14 +207,7 @@ export const insertLabel = async <T extends SVGGraphicsElement>(
   }
 
   // Center the label
-  if (useHtmlLabels) {
-    labelEl.attr('transform', 'translate(' + -bbox.width / 2 + ', ' + -bbox.height / 2 + ')');
-  } else {
-    labelEl.attr('transform', 'translate(' + 0 + ', ' + -bbox.height / 2 + ')');
-  }
-  if (options.centerLabel) {
-    labelEl.attr('transform', 'translate(' + -bbox.width / 2 + ', ' + -bbox.height / 2 + ')');
-  }
+  labelEl.attr('transform', `translate(${centredLabelX(bbox)}, ${-bbox.height / 2})`);
   labelEl.insert('rect', ':first-child');
   return { shapeSvg: parent, bbox, halfPadding, label: labelEl };
 };

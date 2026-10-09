@@ -81,13 +81,11 @@ export async function usecaseJsonTable<T extends SVGGraphicsElement>(
       labelStyle: labelStyles,
       useHtmlLabels: node.useHtmlLabels,
       padding: 0,
-      centerLabel: true,
     });
     const value = await insertLabel(tableGroup, row.value, {
       labelStyle: labelStyles,
       useHtmlLabels: node.useHtmlLabels,
       padding: 0,
-      centerLabel: true,
     });
     measuredRows.push({
       key: {
