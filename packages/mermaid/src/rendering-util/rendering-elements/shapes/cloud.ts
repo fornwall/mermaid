@@ -5,7 +5,7 @@ import { handleUndefinedAttr } from '../../../utils.js';
 import type { Node } from '../../types.js';
 import intersect from '../intersect/index.js';
 import { styles2String, userNodeOverrides } from './handDrawnShapeStyles.js';
-import { getNodeClasses, labelHelper, updateNodeBounds } from './util.js';
+import { centerOnBoundingBox, getNodeClasses, labelHelper, updateNodeBounds } from './util.js';
 
 export async function cloud<T extends SVGGraphicsElement>(parent: D3Selection<T>, node: Node) {
   const { labelStyles, nodeStyles } = styles2String(node);
@@ -61,12 +61,17 @@ export async function cloud<T extends SVGGraphicsElement>(parent: D3Selection<T>
       .attr('d', path);
   }
 
-  label.attr('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2})`);
+  // Centre the label horizontally whether it is an HTML label (whose box starts at x=0) or SVG
+  // text, which may already be centred on x=0 by `text-anchor: middle` (see withMinWidth).
+  label.attr(
+    'transform',
+    `translate(${-bbox.width / 2 - (bbox.x - (bbox.left ?? 0))}, ${-bbox.height / 2})`
+  );
 
-  // Center the shape
-  cloudElem.attr('transform', `translate(${-w / 2}, ${-h / 2})`);
-
-  updateNodeBounds(node, cloudElem);
+  // Centre the shape on the label. The bumps stick out past the nominal w x h box by different
+  // amounts on each side (e.g. -0.1w on the left but +0.15w on the right), so translating by
+  // half the nominal size would leave the outline off centre.
+  updateNodeBounds(node, cloudElem, centerOnBoundingBox(cloudElem));
 
   node.calcIntersect = function (bounds: Bounds, point: Point) {
     return intersect.rect(bounds, point);

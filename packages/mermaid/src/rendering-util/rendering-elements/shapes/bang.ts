@@ -1,5 +1,5 @@
 import { log } from '../../../logger.js';
-import { labelHelper, updateNodeBounds, getNodeClasses } from './util.js';
+import { centerOnBoundingBox, getNodeClasses, labelHelper, updateNodeBounds } from './util.js';
 import intersect from '../intersect/index.js';
 import type { Node } from '../../types.js';
 import { styles2String, userNodeOverrides } from './handDrawnShapeStyles.js';
@@ -27,7 +27,12 @@ export async function bang<T extends SVGGraphicsElement>(parent: D3Selection<T>,
   const effectiveWidth = Math.max(w, minWidth);
   const effectiveHeight = Math.max(h, minHeight);
 
-  label.attr('transform', `translate(${-bbox.width / 2}, ${-bbox.height / 2})`);
+  // Centre the label horizontally whether it is an HTML label (whose box starts at x=0) or SVG
+  // text, which may already be centred on x=0 by `text-anchor: middle` (see withMinWidth).
+  label.attr(
+    'transform',
+    `translate(${-bbox.width / 2 - (bbox.x - (bbox.left ?? 0))}, ${-bbox.height / 2})`
+  );
 
   let bangElem;
   const path = `M0 0 
@@ -65,10 +70,10 @@ export async function bang<T extends SVGGraphicsElement>(parent: D3Selection<T>,
       .attr('d', path);
   }
 
-  // Translate the path (center the shape)
-  bangElem.attr('transform', `translate(${-effectiveWidth / 2}, ${-effectiveHeight / 2})`);
-
-  updateNodeBounds(node, bangElem);
+  // Centre the shape on the label. The outline spans -0.1 to 1.15 of the nominal box on each
+  // axis (its right and bottom bumps stick out further than its left and top ones), so
+  // translating by half the nominal size would leave it off centre.
+  updateNodeBounds(node, bangElem, centerOnBoundingBox(bangElem));
   node.calcIntersect = function (bounds: Bounds, point: Point) {
     return intersect.rect(bounds, point);
   };

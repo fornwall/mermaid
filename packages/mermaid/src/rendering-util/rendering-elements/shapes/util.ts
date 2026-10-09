@@ -247,6 +247,31 @@ export const updateNodeBounds = <T extends SVGGraphicsElement>(
 };
 
 /**
+ * Translates a shape element so that its drawn outline is centred on the node origin, which is
+ * where `labelHelper` centres the label and where `intersect.rect` assumes the node's bounds are
+ * centred.
+ *
+ * Use this instead of translating by half of a nominal width/height for outlines that extend
+ * unevenly past that nominal box (such as the bumps of the mind map `bang` and `cloud` shapes),
+ * which would otherwise leave the outline, and hence its bounds and edge intersections, off
+ * centre relative to the label.
+ *
+ * @returns The element's bounding box, which is exactly what `updateNodeBounds` would measure and
+ * can be passed to it as `knownBounds` to avoid a second `getBBox()` reflow.
+ */
+export const centerOnBoundingBox = <T extends SVGGraphicsElement>(
+  element: D3Selection<SVGGElement> | D3Selection<T>
+): { width: number; height: number } => {
+  // getBBox() is in the element's own coordinate system, i.e. not affected by its transform.
+  const { x, y, width, height } =
+    injected.profiling && profiler.tickSync
+      ? profiler.tickSync('getBBox', () => element.node()!.getBBox())
+      : element.node()!.getBBox();
+  element.attr('transform', `translate(${-(x + width / 2)}, ${-(y + height / 2)})`);
+  return { width, height };
+};
+
+/**
  * @param parent - Parent element to append the polygon to
  * @param w - Width of the polygon
  * @param h - Height of the polygon
