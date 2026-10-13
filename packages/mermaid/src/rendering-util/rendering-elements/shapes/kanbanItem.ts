@@ -58,7 +58,6 @@ export async function kanbanItem<T extends SVGGraphicsElement>(
     width: kanbanNode.width,
     img: kanbanNode.img,
     padding: kanbanNode.padding || 8,
-    centerLabel: false,
   };
   let labelEl, bbox2;
   if (link) {

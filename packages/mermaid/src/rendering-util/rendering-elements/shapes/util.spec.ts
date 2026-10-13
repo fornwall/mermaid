@@ -109,3 +109,43 @@ describe('circle shapes and minNodeWidth', () => {
     expect(Number(svg.select('.outer-circle').attr('r'))).toBe(21);
   });
 });
+
+describe('SVG label centring', () => {
+  let textBBox: { x: number; width: number };
+
+  beforeEach(() => {
+    setConfig({ htmlLabels: false });
+    document.body.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
+    // jsdom has no text layout: stand in for getBBox() and getComputedTextLength().
+    (SVGElement.prototype as unknown as SVGGraphicsElement).getBBox = () =>
+      ({ ...textBBox, y: -8, height: 16 }) as DOMRect;
+    (SVGElement.prototype as unknown as SVGTextContentElement).getComputedTextLength = () => 40;
+  });
+
+  afterEach(() => {
+    reset();
+    delete (SVGElement.prototype as Partial<SVGGraphicsElement>).getBBox;
+    delete (SVGElement.prototype as Partial<SVGTextContentElement>).getComputedTextLength;
+  });
+
+  const labelTransform = async () => {
+    const parent = select(document.querySelector<SVGSVGElement>('svg')!);
+    const node = { id: 'n', isGroup: false, label: 'Idle', minWidth: 120 } as Node;
+    const { label } = await labelHelper(parent, node, undefined);
+    return label.attr('transform');
+  };
+
+  describe.each([
+    // Styles without `text-anchor: middle` (use case, state) leave the text start-anchored at x=0.
+    { anchor: 'start', x: 0 },
+    { anchor: 'middle', x: -20 },
+  ])('$anchor-anchored text', ({ x }) => {
+    beforeEach(() => {
+      textBBox = { x, width: 40 };
+    });
+
+    it('centres the label, widened to minWidth', async () => {
+      expect(await labelTransform()).toBe(`translate(${-x - 20}, -8)`);
+    });
+  });
+});

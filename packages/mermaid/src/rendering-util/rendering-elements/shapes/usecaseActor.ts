@@ -200,7 +200,6 @@ export async function renderUsecaseActor<T extends SVGGraphicsElement>(
       labelStyle: labelStyles,
       useHtmlLabels: node.useHtmlLabels,
       padding: 0,
-      centerLabel: true,
       width: node.wrappingWidth,
     });
     stereotypeLabel = stereotype.label.attr('class', 'label usecase-stereotype');
